@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POI Dashboard — Wisco</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080c12;--s1:#0e1420;--s2:#131926;--s3:#1a2133;--s4:#1f2840;
+  --bd:#1e2d45;--bd2:#162038;
+  --text:#e8eef8;--muted:#6b7fa0;--sub:#4a5978;
+  --done:#22c55e;--late:#ef4444;--prog:#3b82f6;--pend:#eab308;--warn:#f97316;
+  --done-glow:rgba(34,197,94,.2);--late-glow:rgba(239,68,68,.2);--prog-glow:rgba(59,130,246,.2);--warn-glow:rgba(249,115,22,.2);
+  --done-dim:rgba(34,197,94,.1);--late-dim:rgba(239,68,68,.1);--prog-dim:rgba(59,130,246,.1);--pend-dim:rgba(234,179,8,.1);--warn-dim:rgba(249,115,22,.1);
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Sarabun','Inter',sans-serif;overflow:hidden}
+
+/* ─── HEADER ─── */
+#app{display:grid;grid-template-rows:60px 1fr;height:100vh}
+header{background:linear-gradient(90deg,#0b1220 0%,#0e1830 100%);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative}
+header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#3b82f6,#22c55e,transparent)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-box{width:36px;height:36px;background:linear-gradient(135deg,#3b82f6,#06b6d4);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-size:15px;font-weight:900;color:#fff;letter-spacing:-1px;box-shadow:0 0 16px rgba(59,130,246,.4)}
+.logo-name{font-size:18px;font-weight:800;letter-spacing:.5px;font-family:'Inter',sans-serif}
+.logo-name span{color:#3b82f6}
+.header-center{display:flex;align-items:center;gap:20px}
+#clock-date{font-size:13px;color:var(--muted);font-family:'Inter',sans-serif}
+#clock-time{font-size:22px;font-weight:700;color:var(--text);font-family:'Inter',sans-serif;letter-spacing:1px}
+.live-pill{display:flex;align-items:center;gap:6px;background:var(--done-dim);border:1px solid rgba(34,197,94,.25);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--done);text-transform:uppercase;letter-spacing:.5px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--done);animation:blink 1.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 4px var(--done)}50%{opacity:.3;box-shadow:none}}
+
+/* ─── LAYOUT ─── */
+main{display:grid;grid-template-columns:320px 1fr;overflow:hidden}
+
+/* ─── LEFT PANEL ─── */
+.left{background:var(--s1);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+
+/* KPI STRIP */
+.kpi-strip{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd);border-bottom:1px solid var(--bd);flex-shrink:0}
+.kpi{background:var(--s2);padding:16px 14px;position:relative;overflow:hidden;cursor:default}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.k-total::before{background:linear-gradient(90deg,#3b82f6,#06b6d4)}
+.kpi.k-done::before{background:var(--done)}
+.kpi.k-late::before{background:var(--late)}
+.kpi.k-warn::before{background:var(--warn)}
+.kpi-n{font-size:36px;font-weight:800;font-family:'Inter',sans-serif;line-height:1;letter-spacing:-1px}
+.kpi-n.c-total{color:var(--text)}.kpi-n.c-done{color:var(--done)}.kpi-n.c-late{color:var(--late)}.kpi-n.c-warn{color:var(--warn)}.kpi-n.c-prog{color:var(--prog)}.kpi-n.c-pend{color:var(--pend)}
+.kpi-l{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.kpi-glow{position:absolute;right:-10px;bottom:-10px;width:60px;height:60px;border-radius:50%;opacity:.25}
+.kpi.k-total .kpi-glow{background:var(--prog);box-shadow:0 0 30px var(--prog)}
+.kpi.k-done .kpi-glow{background:var(--done);box-shadow:0 0 30px var(--done)}
+.kpi.k-late .kpi-glow{background:var(--late);box-shadow:0 0 30px var(--late)}
+.kpi.k-warn .kpi-glow{background:var(--warn);box-shadow:0 0 30px var(--warn)}
+
+/* MINI STAT BAR */
+.stat-bar{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd);border-bottom:1px solid var(--bd);flex-shrink:0}
+.stat-cell{background:var(--s2);padding:9px 14px;display:flex;align-items:center;gap:8px}
+.stat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.stat-label{font-size:12px;color:var(--muted);flex:1}
+.stat-val{font-size:14px;font-weight:700;font-family:'Inter',sans-serif}
+
+/* ALERT LIST */
+.alert-head{padding:10px 16px 6px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--bd)}
+.alert-count{background:var(--late-dim);color:var(--late);border:1px solid rgba(239,68,68,.2);border-radius:99px;font-size:10px;padding:1px 8px;font-weight:700}
+.alert-count.c-warn{background:var(--warn-dim);color:var(--warn);border-color:rgba(249,115,22,.2)}
+.alert-list{flex:1;overflow-y:auto}
+.alert-item{padding:10px 16px;border-bottom:1px solid var(--bd2);cursor:pointer;transition:background .12s;position:relative}
+.alert-item:hover{background:var(--s3)}
+.alert-item.is-late{border-left:3px solid var(--late)}
+.alert-item.is-warn{border-left:3px solid var(--warn)}
+.alert-item-top{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.alert-poi{font-size:12px;font-weight:700;font-family:'Inter',sans-serif}
+.alert-poi.is-late{color:var(--late)}.alert-poi.is-warn{color:var(--warn)}
+.alert-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.3px}
+.ab-late{background:var(--late-dim);color:var(--late);border:1px solid rgba(239,68,68,.3)}
+.ab-warn{background:var(--warn-dim);color:var(--warn);border:1px solid rgba(249,115,22,.3)}
+.alert-step{font-size:13px;color:var(--text);font-weight:500}
+.alert-meta{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ─── RIGHT PANEL ─── */
+.right{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+
+/* FILTER BAR */
+.filter-bar{background:var(--s1);border-bottom:1px solid var(--bd);padding:12px 20px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.fchip{font-size:12px;padding:6px 16px;border-radius:99px;border:1px solid var(--bd);background:transparent;color:var(--muted);cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .15s;font-weight:500}
+.fchip:hover{border-color:var(--text);color:var(--text)}
+.fchip.active{color:#fff;border-color:transparent}
+.fchip.active.f-all{background:linear-gradient(90deg,#3b82f6,#06b6d4);box-shadow:0 0 12px rgba(59,130,246,.3)}
+.fchip.active.f-late{background:var(--late);box-shadow:0 0 12px var(--late-glow)}
+.fchip.active.f-warn{background:var(--warn);box-shadow:0 0 12px var(--warn-glow)}
+.fchip.active.f-prog{background:var(--prog);box-shadow:0 0 12px var(--prog-glow)}
+.fchip.active.f-done{background:var(--done);box-shadow:0 0 12px var(--done-glow)}
+.fchip.active.f-pend{background:var(--pend);box-shadow:0 0 10px rgba(234,179,8,.3)}
+.chip-count{font-size:10px;background:rgba(255,255,255,.15);border-radius:99px;padding:1px 7px;margin-left:4px;font-weight:700}
+
+/* PO CARDS GRID */
+.cards-area{flex:1;overflow-y:auto;padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:14px;align-content:start}
+.empty-state{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--muted);gap:8px}
+.empty-icon{font-size:48px;opacity:.3}
+
+/* ─── PO CARD ─── */
+.po-card{background:var(--s1);border:1px solid var(--bd);border-radius:12px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
+.po-card:hover{border-color:var(--bd2);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.po-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.po-card.st-done::before{background:var(--done)}
+.po-card.st-late::before{background:linear-gradient(90deg,var(--late),#ff6b6b)}
+.po-card.st-progress::before{background:linear-gradient(90deg,var(--prog),#06b6d4)}
+.po-card.st-warn::before{background:linear-gradient(90deg,var(--warn),#fbbf24)}
+.po-card.st-pending::before{background:var(--pend)}
+.po-card.st-late{box-shadow:0 0 0 1px rgba(239,68,68,.2),0 4px 20px rgba(239,68,68,.08)}
+.po-card.st-warn{box-shadow:0 0 0 1px rgba(249,115,22,.2),0 4px 20px rgba(249,115,22,.08)}
+
+/* CARD TOP */
+.card-top{padding:14px 16px 12px;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid var(--bd2)}
+.card-id-block{flex:1;min-width:0}
+.card-id{font-size:15px;font-weight:800;font-family:'Inter',sans-serif;color:var(--text);letter-spacing:.3px}
+.card-supplier{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-customer{font-size:11px;color:var(--sub);margin-top:1px}
+.sbadge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;white-space:nowrap;letter-spacing:.2px;flex-shrink:0}
+.sb-done{background:var(--done-dim);color:var(--done);border:1px solid rgba(34,197,94,.3)}
+.sb-late{background:var(--late-dim);color:var(--late);border:1px solid rgba(239,68,68,.3)}
+.sb-prog{background:var(--prog-dim);color:var(--prog);border:1px solid rgba(59,130,246,.3)}
+.sb-pend{background:var(--pend-dim);color:var(--pend);border:1px solid rgba(234,179,8,.3)}
+.sb-warn{background:var(--warn-dim);color:var(--warn);border:1px solid rgba(249,115,22,.3)}
+
+/* PROGRESS SECTION */
+.card-prog{padding:12px 16px 10px;border-bottom:1px solid var(--bd2)}
+.prog-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.prog-pct{font-size:22px;font-weight:800;font-family:'Inter',sans-serif;line-height:1}
+.prog-frac{font-size:12px;color:var(--muted);margin-left:4px}
+.prog-step-info{font-size:12px;color:var(--muted);text-align:right}
+.prog-step-name{font-size:12px;color:var(--text);font-weight:500}
+
+/* BIG PROGRESS BAR */
+.big-bar{height:10px;background:var(--s3);border-radius:99px;overflow:hidden;margin-bottom:10px;position:relative}
+.big-bar-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1);position:relative}
+.big-bar-fill::after{content:'';position:absolute;top:0;right:0;width:6px;height:100%;border-radius:99px;opacity:.7;filter:blur(2px)}
+.bar-done{background:linear-gradient(90deg,#16a34a,var(--done))}.bar-done::after{background:var(--done)}
+.bar-late{background:linear-gradient(90deg,#dc2626,var(--late))}.bar-late::after{background:var(--late)}
+.bar-prog{background:linear-gradient(90deg,#1d4ed8,var(--prog))}.bar-prog::after{background:var(--prog)}
+.bar-pend{background:var(--pend)}.bar-warn{background:linear-gradient(90deg,#c2410c,var(--warn))}
+
+/* STEP DOTS — BIGGER */
+.step-dots-row{display:flex;gap:3px;align-items:center}
+.sdot{flex:1;height:6px;border-radius:2px;transition:all .3s}
+.sdot-done{background:var(--done)}
+.sdot-active{background:var(--prog);animation:dotpulse 1.5s ease-in-out infinite}
+.sdot-wait{background:var(--s3);border:1px solid var(--bd)}
+.sdot-late{background:var(--late)}
+.sdot-warn{background:var(--warn)}
+@keyframes dotpulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* CARD BOTTOM */
+.card-bottom{padding:10px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.cb-item .cb-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.cb-item .cb-val{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cb-val.v-late{color:var(--late)}.cb-val.v-warn{color:var(--warn)}.cb-val.v-done{color:var(--done)}
+
+/* PERSON AVATAR */
+.person-chip{display:inline-flex;align-items:center;gap:5px;background:var(--s3);border-radius:99px;padding:2px 8px 2px 2px;max-width:100%}
+.person-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;flex-shrink:0}
+.person-name{font-size:11px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ─── MODAL ─── */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.ov.open{display:flex}
+.modal{background:var(--s2);border:1px solid var(--bd);border-radius:14px;width:680px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.7)}
+.modal-top{padding:20px 24px;border-bottom:1px solid var(--bd);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:var(--s1);border-radius:14px 14px 0 0}
+.modal-id{font-size:20px;font-weight:800;font-family:'Inter',sans-serif;color:var(--text)}
+.modal-close{background:var(--s3);border:1px solid var(--bd);color:var(--muted);font-size:18px;cursor:pointer;padding:4px 10px;border-radius:6px;line-height:1;transition:all .1s;flex-shrink:0}.modal-close:hover{color:var(--text);background:var(--s4)}
+.modal-body{overflow-y:auto;padding:20px 24px}
+.modal-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+.mm-item{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px 12px}
+.mm-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+.mm-v{font-size:13px;font-weight:600;color:var(--text)}
+
+/* MODAL BIG PROGRESS */
+.modal-prog{background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:16px 18px;margin-bottom:20px}
+.modal-prog-header{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.modal-pct{font-size:32px;font-weight:800;font-family:'Inter',sans-serif;line-height:1}
+.modal-pct-label{font-size:13px;color:var(--muted)}
+.modal-bar{height:12px;background:var(--s3);border-radius:99px;overflow:hidden}
+.modal-bar-fill{height:100%;border-radius:99px;transition:width .6s}
+
+/* TIMELINE */
+.tl-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.tl-item{display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--bd2);position:relative}
+.tl-item:last-child{border-bottom:none}
+.tl-item.tl-active{background:rgba(59,130,246,.05);margin:0 -8px;padding:10px 8px;border-radius:8px}
+.tl-item.tl-late{background:rgba(239,68,68,.06);margin:0 -8px;padding:10px 8px;border-radius:8px}
+.tl-item.tl-warn{background:rgba(249,115,22,.06);margin:0 -8px;padding:10px 8px;border-radius:8px}
+.tl-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;font-family:'Inter',sans-serif}
+.tn-done{background:rgba(34,197,94,.15);color:var(--done);border:1px solid rgba(34,197,94,.3)}
+.tn-active{background:rgba(59,130,246,.15);color:var(--prog);border:1px solid rgba(59,130,246,.3)}
+.tn-late{background:rgba(239,68,68,.15);color:var(--late);border:1px solid rgba(239,68,68,.3)}
+.tn-warn{background:rgba(249,115,22,.15);color:var(--warn);border:1px solid rgba(249,115,22,.3)}
+.tn-wait{background:var(--s3);color:var(--sub);border:1px solid var(--bd)}
+.tl-name{font-size:14px;font-weight:600;color:var(--text);padding-top:6px}
+.tl-person{font-size:12px;color:var(--muted);margin-top:3px}
+.tl-delay-tag{font-size:11px;color:var(--late);font-weight:700;margin-top:3px}
+.tl-warn-tag{font-size:11px;color:var(--warn);font-weight:700;margin-top:3px}
+.tl-right{text-align:right;padding-top:6px}
+.tl-due{font-size:11px;color:var(--muted)}
+.tl-done-date{font-size:11px;color:var(--done);margin-top:2px}
+
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="logo">
+    <div class="logo-box">W</div>
+    <div class="logo-name">WISCO <span>POI</span></div>
+  </div>
+  <div class="header-center">
+    <div><div id="clock-date"></div><div id="clock-time"></div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="live-pill"><div class="live-dot"></div>Live</div>
+  </div>
+</header>
+
+<main>
+<!-- LEFT -->
+<div class="left">
+  <div class="kpi-strip" id="kpi-strip"></div>
+  <div class="stat-bar" id="stat-bar"></div>
+  <div class="alert-head">
+    <span>⚠ งานที่ต้องติดตาม</span>
+    <span id="alert-total-badge" class="alert-count">0</span>
+  </div>
+  <div class="alert-list" id="alert-list"></div>
+</div>
+
+<!-- RIGHT -->
+<div class="right">
+  <div class="filter-bar" id="filter-bar">
+    <button class="fchip active f-all" onclick="setF('all',this)">ทั้งหมด</button>
+    <button class="fchip f-late" onclick="setF('late',this)">🔴 เลยกำหนด</button>
+    <button class="fchip f-warn" onclick="setF('warn',this)">🟠 ล่าช้า</button>
+    <button class="fchip f-prog" onclick="setF('progress',this)">🔵 กำลังดำเนินการ</button>
+    <button class="fchip f-done" onclick="setF('done',this)">🟢 เสร็จแล้ว</button>
+    <button class="fchip f-pend" onclick="setF('pending',this)">⚪ ยังไม่เริ่ม</button>
+  </div>
+  <div class="cards-area" id="cards-area"></div>
+</div>
+</main>
+</div>
+
+<!-- MODAL -->
+<div class="ov" id="modal" onclick="if(event.target===this)closeM()">
+  <div class="modal">
+    <div class="modal-top">
+      <div><div class="modal-id" id="m-id"></div><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap" id="m-badges"></div></div>
+      <button class="modal-close" onclick="closeM()">✕ ปิด</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+  </div>
+</div>
+
+<script>
+const STEPS=["รับ PR","ขอราคา SUP","เปิด POI","Check POI","Approve POI","ส่ง POI ให้ Sup","รับ PI","รับ Drawing","ทำ Drawing / Nameplate","ส่ง Drawing ให้ลูกค้า Approve","ส่ง Drawing ยืนยันกับ SUP","รอผลิต","จ่ายเงิน Sup","ขนส่ง","รับสินค้า"];
+const DEFAULT_DAYS=[1,3,2,1,1,1,3,3,5,3,3,30,3,7,1];
+const AV_COLORS=['#1d4ed8','#15803d','#b45309','#9f1239','#6d28d9','#0e7490','#92400e'];
+const AV_BG=['rgba(59,130,246,.2)','rgba(34,197,94,.2)','rgba(245,158,11,.2)','rgba(244,63,94,.2)','rgba(139,92,246,.2)','rgba(6,182,212,.2)','rgba(146,64,14,.2)'];
+let flt='all', _projects=[], _stepDays=[...DEFAULT_DAYS];
+
+const API = '';  // empty = same host, e.g. http://192.168.1.x:3000
+
+async function loadAll(){
+  try {
+    const [projRes, cfgRes] = await Promise.all([
+      fetch(API+'/api/projects'), fetch(API+'/api/config')
+    ]);
+    _projects = await projRes.json();
+    const cfg = await cfgRes.json();
+    _stepDays = cfg.stepDays || [...DEFAULT_DAYS];
+  } catch(e){ console.error('API error',e); }
+}
+function getStepDays(){ return _stepDays; }
+function avColor(n,bg){const i=(n||'A').charCodeAt(0)%AV_COLORS.length;return bg?AV_BG[i]:AV_COLORS[i]}
+function initials(n){if(!n||n==='—')return'?';const p=n.split('-');return(p[0]||'').substring(0,2).toUpperCase()}
+
+function calcStatus(po){
+  if((po.completedSteps||0)>=STEPS.length)return'done';
+  const due=po.dueDate?new Date(po.dueDate):null;
+  if(due&&due<new Date())return'late';
+  if(stepDelayed(po,po.completedSteps||0))return'warn';
+  if((po.completedSteps||0)===0)return'pending';
+  return'progress';
+}
+function stepDelayed(po,i){
+  if(i>=STEPS.length)return false;
+  const allowed=(getStepDays()[i]||1);
+  let s=i===0?(po.startDate?new Date(po.startDate):null):((po.stepDates||[])[i-1]?new Date((po.stepDates||[])[i-1]):null);
+  if(!s)return false;
+  const dl=new Date(s);dl.setDate(dl.getDate()+allowed);return new Date()>dl;
+}
+function delayDays(po,i){
+  const allowed=(getStepDays()[i]||1);
+  let s=i===0?(po.startDate?new Date(po.startDate):null):((po.stepDates||[])[i-1]?new Date((po.stepDates||[])[i-1]):null);
+  if(!s)return 0;
+  const dl=new Date(s);dl.setDate(dl.getDate()+allowed);
+  const d=Math.floor((new Date()-dl)/86400000);return d>0?d:0;
+}
+function barClass(s){return{done:'bar-done',late:'bar-late',progress:'bar-prog',pending:'bar-pend',warn:'bar-warn'}[s]||'bar-pend'}
+function statusColor(s){return{done:'#22c55e',late:'#ef4444',progress:'#3b82f6',pending:'#eab308',warn:'#f97316'}[s]}
+function sbadge(s){const m={done:['sb-done','✅ เสร็จแล้ว'],late:['sb-late','🔴 เลยกำหนด'],progress:['sb-prog','🔵 กำลังดำเนินการ'],pending:['sb-pend','⚪ ยังไม่เริ่ม'],warn:['sb-warn','🟠 ขั้นตอนล่าช้า']};const[c,l]=m[s]||m.pending;return`<span class="sbadge ${c}">${l}</span>`}
+
+function render(){
+  const ps=_projects||[];
+  const cnt={done:0,late:0,progress:0,pending:0,warn:0};
+  ps.forEach(p=>{ const s=calcStatus(p); cnt[s]=(cnt[s]||0)+1; });
+  const total=ps.length;
+
+  // KPI strip
+  document.getElementById('kpi-strip').innerHTML=`
+    <div class="kpi k-total"><div class="kpi-n c-total">${total}</div><div class="kpi-l">โปรเจคทั้งหมด</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-done"><div class="kpi-n c-done">${cnt.done}</div><div class="kpi-l">เสร็จแล้ว</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-late"><div class="kpi-n c-late">${cnt.late}</div><div class="kpi-l">เลยกำหนด</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-warn"><div class="kpi-n c-warn">${cnt.warn}</div><div class="kpi-l">ขั้นตอนล่าช้า</div><div class="kpi-glow"></div></div>`;
+
+  const doneTasks=ps.reduce((a,p)=>a+Math.min(p.completedSteps||0,STEPS.length),0);
+  const totalTasks=ps.length*STEPS.length;
+  document.getElementById('stat-bar').innerHTML=`
+    <div class="stat-cell"><div class="stat-dot" style="background:#3b82f6"></div><span class="stat-label">กำลังดำเนินการ</span><span class="stat-val" style="color:#3b82f6">${cnt.progress}</span></div>
+    <div class="stat-cell"><div class="stat-dot" style="background:#eab308"></div><span class="stat-label">ยังไม่เริ่ม</span><span class="stat-val" style="color:#eab308">${cnt.pending}</span></div>
+    <div class="stat-cell"><div class="stat-dot" style="background:#22c55e"></div><span class="stat-label">Task เสร็จแล้ว</span><span class="stat-val" style="color:#22c55e">${doneTasks}</span></div>
+    <div class="stat-cell"><div class="stat-dot" style="background:#6b7fa0"></div><span class="stat-label">Task ทั้งหมด</span><span class="stat-val">${totalTasks}</span></div>`;
+
+  // Alerts
+  const lateItems=[],warnItems=[];
+  ps.forEach(po=>{
+    const s=calcStatus(po);const si=po.completedSteps||0;
+    if(si>=STEPS.length)return;
+    const person=(po.responsible||[])[si]||'—';
+    const dd=delayDays(po,si);
+    if(s==='late')lateItems.push({po,si,person,dd});
+    else if(s==='warn')warnItems.push({po,si,person,dd});
+  });
+  document.getElementById('alert-total-badge').textContent=lateItems.length+warnItems.length;
+  document.getElementById('alert-total-badge').className='alert-count'+(lateItems.length===0?' c-warn':'');
+  let html='';
+  if(lateItems.length){html+=lateItems.map(({po,si,person,dd})=>`<div class="alert-item is-late" onclick="openM('${po.id}')">
+    <div class="alert-item-top"><span class="alert-poi is-late">${po.id}</span><span class="alert-badge ab-late">เลยกำหนด</span>${dd>0?`<span class="alert-badge ab-late">${dd}วัน</span>`:''}</div>
+    <div class="alert-step">${STEPS[si]}</div>
+    <div class="alert-meta">👤 ${person} · 📅 ${po.dueDate||'—'}</div>
+  </div>`).join('')}
+  if(warnItems.length){html+=warnItems.map(({po,si,person,dd})=>`<div class="alert-item is-warn" onclick="openM('${po.id}')">
+    <div class="alert-item-top"><span class="alert-poi is-warn">${po.id}</span><span class="alert-badge ab-warn">ล่าช้า ${dd}วัน</span></div>
+    <div class="alert-step">${STEPS[si]}</div>
+    <div class="alert-meta">👤 ${person}</div>
+  </div>`).join('')}
+  if(!html)html='<div style="padding:24px 16px;text-align:center;font-size:13px;color:#4a5978">✅ ไม่มีงานล่าช้า</div>';
+  document.getElementById('alert-list').innerHTML=html;
+
+  // Filter chips with counts
+  const fkeys=['all','late','warn','progress','done','pending'];
+  const flabels=['ทั้งหมด','🔴 เลยกำหนด','🟠 ล่าช้า','🔵 กำลังดำเนินการ','🟢 เสร็จแล้ว','⚪ ยังไม่เริ่ม'];
+  const fclasses=['f-all','f-late','f-warn','f-prog','f-done','f-pend'];
+  document.querySelectorAll('.fchip').forEach((c,i)=>{
+    const k=fkeys[i];const n=k==='all'?total:(cnt[k]||0);
+    c.innerHTML=`${flabels[i]}<span class="chip-count">${n}</span>`;
+  });
+
+  // Cards
+  const filtered=flt==='all'?ps:ps.filter(p=>calcStatus(p)===flt);
+  const area=document.getElementById('cards-area');
+  if(!filtered.length){area.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div style="font-size:14px">ไม่มีข้อมูลที่ตรงกับตัวกรอง</div></div>';return}
+  area.innerHTML=filtered.map(po=>{
+    const s=calcStatus(po);const si=Math.min(po.completedSteps||0,STEPS.length-1);
+    const pct=Math.round((Math.min(po.completedSteps||0,STEPS.length)/STEPS.length)*100);
+    const currentStep=po.completedSteps>=STEPS.length?'เสร็จสมบูรณ์':STEPS[si];
+    const person=(po.responsible||[])[si]||'—';
+    const delayed=po.completedSteps<STEPS.length&&stepDelayed(po,si);
+    const dd=delayed?delayDays(po,si):0;
+    const dueColor=s==='late'?'v-late':s==='warn'?'v-warn':s==='done'?'v-done':'';
+    const sc=statusColor(s);
+
+    const dots=STEPS.map((_,i)=>{
+      let c='sdot-wait';
+      if(i<(po.completedSteps||0))c='sdot-done';
+      else if(i===si&&s==='late')c='sdot-late';
+      else if(i===si&&s==='warn')c='sdot-warn';
+      else if(i===si)c='sdot-active';
+      return`<div class="sdot ${c}"></div>`;
+    }).join('');
+
+    const avBg=avColor(person,true);const avFg=avColor(person,false);
+    return`<div class="po-card st-${s}" onclick="openM('${po.id}')">
+      <div class="card-top">
+        <div class="card-id-block">
+          <div class="card-id">${po.id}</div>
+          <div class="card-supplier">${po.supplier||'—'} ${po.item?'· '+po.item:''}</div>
+          <div class="card-customer">${po.customer?'ลูกค้า: '+po.customer:''}</div>
+        </div>
+        ${sbadge(s)}
+      </div>
+      <div class="card-prog">
+        <div class="prog-header">
+          <div><span class="prog-pct" style="color:${sc}">${pct}%</span><span class="prog-frac">${Math.min(po.completedSteps||0,STEPS.length)}/${STEPS.length} ขั้นตอน</span></div>
+          <div class="prog-step-info">${po.completedSteps>=STEPS.length?'':'ขั้นตอน '+(si+1)+': '}<span class="prog-step-name">${currentStep}</span></div>
+        </div>
+        <div class="big-bar"><div class="big-bar-fill ${barClass(s)}" style="width:${pct}%"></div></div>
+        <div class="step-dots-row">${dots}</div>
+      </div>
+      <div class="card-bottom">
+        <div class="cb-item"><div class="cb-lbl">ผู้รับผิดชอบ</div>
+          <div class="person-chip"><div class="person-av" style="background:${avBg};color:${avFg}">${initials(person)}</div><span class="person-name">${person.split('-')[0]||person}</span></div>
+        </div>
+        <div class="cb-item"><div class="cb-lbl">วันส่งมอบ</div><div class="cb-val ${dueColor}">${po.dueDate||'—'}</div></div>
+        <div class="cb-item"><div class="cb-lbl">${delayed&&!s==='done'?'ล่าช้า':'สถานะขั้นตอน'}</div><div class="cb-val ${delayed&&po.completedSteps<STEPS.length?'v-late':''}">${delayed&&po.completedSteps<STEPS.length?'⚠ '+dd+' วัน':s==='done'?'เสร็จแล้ว':'ปกติ'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setF(f,el){
+  flt=f;document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');render();
+}
+
+function openM(id){
+  const data=ld()||{projects:[]};const po=data.projects.find(p=>p.id===id);if(!po)return;
+  const s=calcStatus(po);const pct=Math.round((Math.min(po.completedSteps||0,STEPS.length)/STEPS.length)*100);
+  const sc=statusColor(s);
+  document.getElementById('m-id').textContent=po.id;
+  document.getElementById('m-badges').innerHTML=sbadge(s)+(po.item?`<span style="font-size:12px;color:var(--muted);padding-top:3px">${po.item}</span>`:'');
+
+  const tl=STEPS.map((name,i)=>{
+    const done=i<(po.completedSteps||0);const active=i===(po.completedSteps||0);
+    const isDel=!done&&stepDelayed(po,i);const dd2=isDel?delayDays(po,i):0;
+    const isLate=active&&s==='late';const isWarn=active&&isDel;
+    let nc,rc='',label=i+1;
+    if(done){nc='tn-done';label='✓'}
+    else if(isLate){nc='tn-late';rc='tl-late'}
+    else if(isWarn){nc='tn-warn';rc='tl-warn'}
+    else if(active){nc='tn-active';rc='tl-active'}
+    else{nc='tn-wait'}
+    const person=(po.responsible||[])[i]||'—';
+    const stepDue=(po.stepDueDates||[])[i]||'';
+    const doneDate=(po.stepDates||[])[i]||'';
+    const avBg2=avColor(person,true);const avFg2=avColor(person,false);
+    return`<div class="tl-item ${rc}">
+      <div class="tl-num ${nc}">${label}</div>
+      <div>
+        <div class="tl-name">${name}</div>
+        <div class="tl-person"><span class="person-chip"><span class="person-av" style="background:${avBg2};color:${avFg2}">${initials(person)}</span><span class="person-name">${person.split('-')[0]||person}</span></span></div>
+        ${isLate?`<div class="tl-delay-tag">🔴 เลยกำหนดส่งมอบ</div>`:''}
+        ${isWarn&&!isLate?`<div class="tl-warn-tag">🟠 ล่าช้า ${dd2} วัน</div>`:''}
+      </div>
+      <div class="tl-right">
+        ${stepDue?`<div class="tl-due">📅 ${stepDue}</div>`:''}
+        ${doneDate?`<div class="tl-done-date">✅ ${doneDate}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('m-body').innerHTML=`
+    <div class="modal-meta">
+      <div class="mm-item"><div class="mm-l">Supplier</div><div class="mm-v">${po.supplier||'—'}</div></div>
+      <div class="mm-item"><div class="mm-l">ลูกค้า</div><div class="mm-v">${po.customer||'—'}</div></div>
+      <div class="mm-item"><div class="mm-l">วันส่งมอบ</div><div class="mm-v" style="color:${s==='late'?'var(--late)':s==='warn'?'var(--warn)':'var(--text)'}">${po.dueDate||'—'}</div></div>
+    </div>
+    <div class="modal-prog">
+      <div class="modal-prog-header">
+        <span class="modal-pct" style="color:${sc}">${pct}%</span>
+        <span class="modal-pct-label">เสร็จสิ้น · ${Math.min(po.completedSteps||0,STEPS.length)} จาก ${STEPS.length} ขั้นตอน</span>
+      </div>
+      <div class="modal-bar"><div class="modal-bar-fill ${barClass(s)}" style="width:${pct}%"></div></div>
+    </div>
+    <div class="tl-title">ขั้นตอนทั้งหมด</div>
+    <div>${tl}</div>`;
+  document.getElementById('modal').classList.add('open');
+}
+function closeM(){document.getElementById('modal').classList.remove('open')}
+
+function tick(){
+  const n=new Date();
+  document.getElementById('clock-date').textContent=n.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('clock-time').textContent=n.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+async function refresh(){ await loadAll(); render(); }
+
+tick();
+refresh();
+setInterval(refresh, 30000);
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

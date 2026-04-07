@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POI จัดการข้อมูล - Wisco</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f0f2f5;--surface:#fff;--surface2:#f6f8fa;--border:#d0d7de;--border2:#e8ebee;--text:#1f2328;--muted:#636c76;--accent:#0969da;--done:#1a7f37;--late:#cf222e;--prog:#0550ae;--pend:#9a6700;--warn:#d97706;--done-bg:#dafbe1;--late-bg:#ffebe9;--prog-bg:#ddf4ff;--pend-bg:#fff8c5;--warn-bg:#fff7ed;--done-bd:#82cfad;--late-bd:#f5a1a0;--prog-bd:#79c0ff;--pend-bd:#e3b341;--warn-bd:#f59e0b;--r:6px;--rl:12px}
+html,body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;min-height:100vh}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.logo{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.logo-icon{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700}
+.logo span{color:var(--accent)}
+.btn{font-size:13px;padding:6px 14px;border-radius:var(--r);font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:500;transition:all .15s;border:1px solid var(--border);line-height:1.4}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-primary:hover{background:#0550ae}
+.btn-secondary{background:var(--surface);color:var(--text)}.btn-secondary:hover{background:var(--surface2)}
+.btn-danger{background:#fff;color:var(--late);border-color:var(--late-bd)}.btn-danger:hover{background:var(--late-bg)}
+.btn-warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-bd)}.btn-warn:hover{opacity:.85}
+.btn-sm{font-size:12px;padding:4px 10px}
+.btn-success{background:var(--done-bg);color:var(--done);border-color:var(--done-bd);font-weight:600}.btn-success:hover{background:#c0efce}
+
+/* NAV TABS */
+.nav-tabs{display:flex;gap:2px;padding:0 24px;background:var(--surface);border-bottom:1px solid var(--border)}
+.nav-tab{font-size:13px;font-weight:500;padding:10px 16px;cursor:pointer;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;font-family:'Sarabun',sans-serif;transition:all .15s}
+.nav-tab:hover{color:var(--text)}.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+.page-layout{display:grid;grid-template-columns:270px 1fr;min-height:calc(100vh - 90px)}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sidebar-top{padding:14px 16px;border-bottom:1px solid var(--border2)}
+.sidebar-search{width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface2);color:var(--text);font-family:'Sarabun',sans-serif}
+.sidebar-search:focus{outline:none;border-color:var(--accent)}
+.sidebar-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding:10px 16px 4px}
+.poi-list{flex:1;overflow-y:auto}
+.poi-item{display:flex;align-items:center;gap:8px;padding:9px 16px;cursor:pointer;transition:background .1s;border-left:3px solid transparent}
+.poi-item:hover{background:var(--surface2)}.poi-item.active{background:#ebf5ff;border-left-color:var(--accent)}
+.poi-item-main{flex:1;min-width:0}
+.poi-item-id{font-size:13px;font-weight:600;color:var(--text)}
+.poi-item-sub{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.poi-pct{font-size:11px;color:var(--muted);flex-shrink:0}
+.poi-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.d-done{background:var(--done)}.d-late{background:var(--late)}.d-prog{background:var(--prog)}.d-pend{background:var(--pend)}.d-warn{background:var(--warn)}
+.add-btn{margin:12px 16px;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;border-radius:var(--r);border:1px dashed var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .15s;flex-shrink:0}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);background:#ebf5ff}
+
+/* CONTENT */
+.content{padding:20px 24px;overflow-y:auto}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px}
+.page-title{font-size:18px;font-weight:700;color:var(--text)}
+.page-sub{font-size:13px;color:var(--muted);margin-top:3px}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:16px;overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;background:var(--surface2)}
+.card-title{font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px}
+.card-body{padding:18px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg{display:flex;flex-direction:column;gap:5px}
+label{font-size:12px;font-weight:500;color:var(--text)}.req{color:var(--late);margin-left:2px}
+input,select,textarea{font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:'Sarabun',sans-serif;transition:border-color .15s}
+input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(9,105,218,.1)}
+input:disabled,select:disabled{background:var(--surface2);color:var(--muted);cursor:not-allowed}
+
+/* STEPS TABLE */
+.steps-table{width:100%;border-collapse:collapse}
+.steps-table th{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:9px 10px;text-align:left;border-bottom:1px solid var(--border2);background:var(--surface2);white-space:nowrap}
+.steps-table td{padding:9px 10px;border-bottom:1px solid var(--border2);vertical-align:middle;font-size:13px}
+.steps-table tr:last-child td{border-bottom:none}
+.steps-table tr.row-active{background:#f0f7ff}
+.steps-table tr.row-delay{background:#fff5f5}
+.steps-table tr.row-done{opacity:.75}
+.snum{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.pill{font-size:10px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap;display:inline-block}
+.p-done{background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd)}
+.p-late{background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)}
+.p-active{background:var(--prog-bg);color:var(--prog);border:1px solid var(--prog-bd)}
+.p-wait{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.p-warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd)}
+.delay-badge{font-size:10px;color:var(--late);background:var(--late-bg);border:1px solid var(--late-bd);padding:1px 6px;border-radius:4px;margin-left:4px;white-space:nowrap}
+.warn-badge{font-size:10px;color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-bd);padding:1px 6px;border-radius:4px;margin-left:4px;white-space:nowrap}
+
+.pb-outer{height:8px;background:var(--border2);border-radius:99px;overflow:hidden}
+.pb-inner{height:100%;border-radius:99px;transition:width .4s}
+.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+
+/* SUMMARY ROW */
+.summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.sum-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;display:flex;align-items:center;gap:12px}
+.sum-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sum-num{font-size:20px;font-weight:700;line-height:1}
+.sum-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* MODAL */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.modal-ov.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);width:560px;max-width:97vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border2);background:var(--surface2)}
+.modal-title{font-size:15px;font-weight:600}
+.modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0;line-height:1}.modal-close:hover{color:var(--text)}
+.modal-body{overflow-y:auto;padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border2);display:flex;justify-content:flex-end;gap:8px;background:var(--surface2)}
+.alert{padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:12px}
+.alert-success{background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd)}
+.alert-error{background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)}
+.sel-sm{font-size:12px;padding:5px 7px}.din{font-size:12px;padding:5px 7px;width:130px}
+
+/* TEAM CONFIG */
+.team-grid{display:grid;gap:8px}
+.team-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface2)}
+.team-avatar{width:30px;height:30px;border-radius:50%;background:var(--prog-bg);color:var(--prog);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.team-name{flex:1;font-size:13px;font-weight:500}
+.team-role{font-size:11px;color:var(--muted)}
+.team-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0;line-height:1}.team-del:hover{color:var(--late)}
+
+/* CONFIG TAB */
+.config-section{margin-bottom:24px}
+.config-title{font-size:14px;font-weight:600;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border2)}
+.add-team-row{display:flex;gap:8px;margin-top:10px}
+
+/* WELCOME */
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center}
+.welcome-icon{font-size:48px;margin-bottom:16px}
+.welcome h2{font-size:18px;font-weight:600;margin-bottom:8px}.welcome p{font-size:14px;color:var(--muted);margin-bottom:20px}
+
+.sel-sm{font-size:12px;padding:5px 7px;min-width:170px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.tabs-content>div{display:none}.tabs-content>div.show{display:block}
+
+/* PASSWORD GATE — overlays content area only */
+#pw-gate{position:fixed;inset:0;background:rgba(8,12,18,.85);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center}
+#pw-gate.hidden{display:none}
+.pw-box{background:#161b22;border:1px solid #1e2d45;border-radius:16px;padding:36px 32px;width:340px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.7)}
+.pw-logo{font-size:32px;margin-bottom:14px}
+.pw-title{font-size:17px;font-weight:700;color:#e8eef8;margin-bottom:4px}
+.pw-sub{font-size:13px;color:#6b7fa0;margin-bottom:24px}
+.pw-input-wrap{position:relative;margin-bottom:12px}
+#pw-input{width:100%;font-size:18px;padding:12px 44px 12px 16px;border:1px solid #1e2d45;border-radius:10px;background:#0e1420;color:#e8eef8;font-family:'Sarabun',sans-serif;letter-spacing:4px;text-align:center;transition:border-color .2s}
+#pw-input:focus{outline:none;border-color:#0969da;box-shadow:0 0 0 3px rgba(9,105,218,.15)}
+#pw-input.error{border-color:#ef4444;animation:shake .3s ease}
+#pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#6b7fa0;cursor:pointer;font-size:16px;padding:4px}
+#pw-toggle:hover{color:#e8eef8}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pw-btn{width:100%;padding:12px;border-radius:10px;font-size:14px;font-weight:600;font-family:'Sarabun',sans-serif;cursor:pointer;background:#0969da;color:#fff;border:none;transition:all .2s;margin-bottom:10px}
+.pw-btn:hover{background:#0550ae}
+.pw-cancel{background:none;border:none;color:#6b7fa0;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif;padding:4px;transition:color .15s}
+.pw-cancel:hover{color:#e8eef8}
+.pw-error{font-size:12px;color:#ef4444;margin-top:6px;min-height:18px}
+</style>
+</head>
+<body>
+<!-- CONFIG PASSWORD GATE (overlay, shown only when accessing config tab) -->
+<div id="pw-gate" class="hidden">
+  <div class="pw-box">
+    <div class="pw-logo">⚙️</div>
+    <div class="pw-title">ตั้งค่าทีมงาน</div>
+    <div class="pw-sub">กรุณาใส่รหัสผ่านผู้ดูแลระบบ</div>
+    <div class="pw-input-wrap">
+      <input id="pw-input" type="password" placeholder="••••••••" maxlength="20" autocomplete="off" onkeydown="if(event.key==='Enter')checkPW()">
+      <button id="pw-toggle" onclick="togglePWShow()" title="แสดง/ซ่อน">👁</button>
+    </div>
+    <button class="pw-btn" onclick="checkPW()">ยืนยัน</button>
+    <div class="pw-error" id="pw-error"></div>
+    <button class="pw-cancel" onclick="cancelPW()">← ยกเลิก กลับไปหน้า POI</button>
+  </div>
+</div>
+<header>
+  <div class="logo"><div class="logo-icon">W</div>WISCO <span>POI</span> จัดการข้อมูล</div>
+  <div style="display:flex;gap:8px">
+    <a href="dashboard.html" target="_blank"><button class="btn btn-secondary">📊 ดู Dashboard</button></a>
+    <button class="btn btn-primary" onclick="openNew()">+ เพิ่ม POI ใหม่</button>
+  </div>
+</header>
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="switchTab('poi',this)">📋 รายการ POI</button>
+  <button class="nav-tab" onclick="switchTab('config',this)">⚙️ ตั้งค่าทีมงาน</button>
+</div>
+
+<div class="tabs-content">
+<!-- TAB: POI LIST -->
+<div id="tab-poi" class="show">
+<div class="page-layout">
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <input class="sidebar-search" placeholder="🔍 ค้นหา POI..." oninput="filterSide(this.value)" id="side-search">
+    </div>
+    <div class="sidebar-label">โปรเจคทั้งหมด</div>
+    <div class="poi-list" id="sidebar"></div>
+    <button class="add-btn" onclick="openNew()">＋ เพิ่ม POI ใหม่</button>
+  </div>
+  <div class="content" id="content">
+    <div class="welcome"><div class="welcome-icon">📦</div><h2>เลือก POI จากรายการ</h2><p>หรือสร้าง POI ใหม่เพื่อเริ่มติดตามงาน</p><button class="btn btn-primary" onclick="openNew()">+ เพิ่ม POI ใหม่</button></div>
+  </div>
+</div>
+</div>
+
+<!-- TAB: CONFIG -->
+<div id="tab-config">
+  <div style="padding:24px;max-width:700px">
+    <div class="config-section">
+      <div class="config-title">👤 จัดการสมาชิกในทีม</div>
+      <div class="team-grid" id="team-grid"></div>
+      <div class="add-team-row">
+        <input id="new-name" placeholder="ชื่อ-ตำแหน่ง เช่น สมชาย-Engineer" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);font-family:'Sarabun',sans-serif">
+        <button class="btn btn-primary" onclick="addTeamMember()">+ เพิ่มสมาชิก</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px">รายชื่อเหล่านี้จะแสดงในเมนูเลือกผู้รับผิดชอบของทุก POI</p>
+    </div>
+    <div class="config-section">
+      <div class="config-title">⏱ กำหนดเวลาเตือนต่อขั้นตอน (วัน)</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">กำหนดว่าแต่ละขั้นตอนควรใช้เวลาไม่เกินกี่วัน หากเกินจะแสดงเป็น "ล่าช้า" บน Dashboard</div>
+      <div id="step-days-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+      <button class="btn btn-primary" style="margin-top:12px" onclick="saveStepDays()">บันทึกการตั้งค่า</button>
+      <span id="days-saved" style="font-size:12px;color:var(--done);margin-left:10px;display:none">✓ บันทึกแล้ว</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MODAL: ADD/EDIT POI -->
+<div class="modal-ov" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title" id="modal-t">เพิ่ม POI ใหม่</span><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div id="modal-alert"></div>
+      <div class="form-grid" style="margin-bottom:4px">
+        <div class="fg"><label>เลขที่ POI <span class="req">*</span></label><input id="np-id" placeholder="เช่น POI6803-0004"></div>
+        <div class="fg"><label>ลูกค้า</label><input id="np-cust" placeholder="ชื่อลูกค้า"></div>
+        <div class="fg"><label>Supplier <span class="req">*</span></label><input id="np-sup" placeholder="ชื่อ Supplier"></div>
+        <div class="fg"><label>สินค้า / รายละเอียด</label><input id="np-item" placeholder="รายละเอียดสินค้า"></div>
+        <div class="fg"><label>วันที่เริ่มต้น</label><input id="np-start" type="date"></div>
+        <div class="fg"><label>วันครบกำหนดส่งมอบ</label><input id="np-due" type="date"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="savePO()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STEPS=["รับ PR","ขอราคา SUP","เปิด POI","Check POI","Approve POI","ส่ง POI ให้ Sup","รับ PI","รับ Drawing","ทำ Drawing / Nameplate","ส่ง Drawing ให้ลูกค้า Approve","ส่ง Drawing ยืนยันกับ SUP","รอผลิต","จ่ายเงิน Sup","ขนส่ง","รับสินค้า"];
+const DEFAULT_DAYS=[1,3,2,1,1,1,3,3,5,3,3,30,3,7,1];
+let activePO=null, editId=null, sideFilter='';
+let _projects=[], _team=[], _stepDays=[...DEFAULT_DAYS];
+
+const API=''; // same host
+
+// ── API helpers ──────────────────────────────────────────────
+async function apiGet(path){ const r=await fetch(API+path); return r.json(); }
+async function apiPost(path,body){ const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return r.json(); }
+async function apiPut(path,body){ const r=await fetch(API+path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return r.json(); }
+async function apiPatch(path,body){ const r=await fetch(API+path,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return r.json(); }
+async function apiDel(path){ const r=await fetch(API+path,{method:'DELETE'}); return r.json(); }
+
+async function loadAll(){
+  const [projects,cfg]=await Promise.all([apiGet('/api/projects'),apiGet('/api/config')]);
+  _projects=projects; _team=cfg.team||[]; _stepDays=cfg.stepDays||[...DEFAULT_DAYS];
+}
+function getTeam(){ return _team; }
+function getStepDays(){ return _stepDays; }
+
+// ── Status logic ─────────────────────────────────────────────
+function st(po){
+  if((po.completedSteps||0)>=STEPS.length)return'done';
+  const due=po.dueDate?new Date(po.dueDate):null;
+  if(due&&due<new Date())return'late';
+  if(isStepDelayed(po,(po.completedSteps||0)))return'warn';
+  if((po.completedSteps||0)===0)return'pending';
+  return'progress';
+}
+function isStepDelayed(po,si){
+  if(si>=STEPS.length)return false;
+  const allowed=getStepDays()[si]||1;
+  let s=si===0?(po.startDate?new Date(po.startDate):null):((po.stepDates||[])[si-1]?new Date((po.stepDates||[])[si-1]):null);
+  if(!s)return false;
+  const dl=new Date(s);dl.setDate(dl.getDate()+allowed);return new Date()>dl;
+}
+function getStepDelayDays(po,si){
+  const allowed=getStepDays()[si]||1;
+  let s=si===0?(po.startDate?new Date(po.startDate):null):((po.stepDates||[])[si-1]?new Date((po.stepDates||[])[si-1]):null);
+  if(!s)return 0;
+  const dl=new Date(s);dl.setDate(dl.getDate()+allowed);
+  const d=Math.floor((new Date()-dl)/86400000);return d>0?d:0;
+}
+function dc(s){return{done:'d-done',late:'d-late',progress:'d-prog',pending:'d-pend',warn:'d-warn'}[s]||'d-pend'}
+function pc(s){return{done:'p-done',late:'p-late',progress:'p-active',pending:'p-wait',warn:'p-warn'}[s]||'p-wait'}
+function sl(s){return{done:'เสร็จแล้ว',late:'เลยกำหนด',progress:'กำลังดำเนินการ',pending:'ยังไม่เริ่ม',warn:'ขั้นตอนล่าช้า'}[s]||s}
+function fc(s){return{done:'#1a7f37',late:'#cf222e',progress:'#0969da',pending:'#9a6700',warn:'#d97706'}[s]}
+function mkpill(s){return`<span class="pill ${pc(s)}">${sl(s)}</span>`}
+function initials(n){const p=(n||'').split('-')[0];return p.substring(0,2).toUpperCase()||'?'}
+function avatarColor(n){const c=['#ddf4ff','#dafbe1','#fff8c5','#ffebe9','#f1e8ff'];return c[(n||'A').charCodeAt(0)%c.length]}
+function avatarTextColor(n){const c=['#0550ae','#1a7f37','#9a6700','#cf222e','#7c3aed'];return c[(n||'A').charCodeAt(0)%c.length]}
+
+// ── Sidebar ──────────────────────────────────────────────────
+function filterSide(v){sideFilter=v.toLowerCase();rSide()}
+function rSide(){
+  const projects=_projects.filter(p=>!sideFilter||p.id.toLowerCase().includes(sideFilter)||((p.customer||'').toLowerCase().includes(sideFilter))||((p.supplier||'').toLowerCase().includes(sideFilter)));
+  document.getElementById('sidebar').innerHTML=projects.map(po=>{
+    const s=st(po);const pct=Math.round((Math.min(po.completedSteps||0,STEPS.length)/STEPS.length)*100);
+    return`<div class="poi-item ${activePO===po.id?'active':''}" onclick="openPO('${po.id}')">
+      <div class="poi-dot ${dc(s)}"></div>
+      <div class="poi-item-main"><div class="poi-item-id">${po.id}</div><div class="poi-item-sub">${po.supplier||''} ${po.customer?'· '+po.customer:''}</div></div>
+      <div class="poi-pct">${pct}%</div>
+    </div>`}).join('')||'<div style="padding:16px;font-size:12px;color:var(--muted);text-align:center">ไม่พบผลลัพธ์</div>';
+}
+
+function openPO(id){activePO=id;rSide();rDetail(id)}
+
+// ── Detail view ──────────────────────────────────────────────
+function rDetail(id){
+  const po=_projects.find(p=>p.id===id);if(!po)return;
+  const s=st(po);const pct=Math.round((Math.min(po.completedSteps||0,STEPS.length)/STEPS.length)*100);
+  const team=getTeam();
+  let delayedSteps=0,doneCount=po.completedSteps||0;
+  for(let i=doneCount;i<STEPS.length;i++){if(isStepDelayed(po,i))delayedSteps++;}
+  const rows=STEPS.map((name,i)=>{
+    const done=i<(po.completedSteps||0);const active=i===(po.completedSteps||0);
+    const isDelayed=!done&&isStepDelayed(po,i);const delayDays=isDelayed?getStepDelayDays(po,i):0;
+    const isOverall=s==='late'&&active;
+    let nc,stxt,rowCls='';
+    if(done){nc='p-done';stxt='เสร็จแล้ว';}
+    else if(isOverall){nc='p-late';stxt='เลยกำหนด';rowCls='row-delay';}
+    else if(isDelayed&&active){nc='p-warn';stxt='ล่าช้า';rowCls='row-delay';}
+    else if(active){nc='p-active';stxt='กำลังทำ';rowCls='row-active';}
+    else if(isDelayed){nc='p-warn';stxt='รอ(ล่าช้า)';rowCls='row-delay';}
+    else{nc='p-wait';stxt='รอ';}
+    const person=(po.responsible||[])[i]||'—';
+    const date=(po.stepDates||[])[i]||'';
+    const stepDue=(po.stepDueDates||[])[i]||'';
+    const opts=['—',...team].map(t=>`<option ${person===t?'selected':''}>${t}</option>`).join('');
+    const delayTag=isDelayed&&!done?`<span class="delay-badge">เกิน ${delayDays} วัน</span>`:'';
+    return`<tr class="${rowCls}">
+      <td><span class="snum ${nc}">${done?'✓':i+1}</span></td>
+      <td style="font-weight:500">${name}${delayTag}</td>
+      <td><span class="pill ${nc}">${stxt}</span></td>
+      <td><select class="sel-sm" ${done?'disabled':''} onchange="upd('${id}',${i},'r',this.value)">${opts}</select></td>
+      <td><input class="din" type="date" value="${stepDue}" onchange="upd('${id}',${i},'sd',this.value)" ${done?'disabled':''}></td>
+      <td><input class="din" type="date" value="${date}" ${done?'disabled':''} onchange="upd('${id}',${i},'d',this.value)"></td>
+      <td>${done?`<button class="btn btn-sm btn-danger" onclick="undoStep('${id}',${i})">ย้อนกลับ</button>`:active?`<button class="btn btn-sm btn-success" onclick="doneStep('${id}',${i})">✓ เสร็จแล้ว</button>`:''}</td>
+    </tr>`;
+  }).join('');
+  const dueColor=s==='late'?'var(--late)':s==='warn'?'var(--warn)':'var(--text)';
+  document.getElementById('content').innerHTML=`
+<div id="sa"></div>
+<div class="page-header">
+  <div><div class="page-title">${po.id} ${mkpill(s)}</div><div class="page-sub">${po.supplier||''} ${po.item?'· '+po.item:''} ${po.customer?'· ลูกค้า: '+po.customer:''}</div></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-sm btn-secondary" onclick="editInfo('${id}')">✏️ แก้ไขข้อมูล</button>
+    <button class="btn btn-sm btn-danger" onclick="delPO('${id}')">🗑 ลบ POI</button>
+  </div>
+</div>
+<div class="summary-row">
+  <div class="sum-card"><div class="sum-icon" style="background:#ddf4ff">📋</div><div><div class="sum-num">${STEPS.length}</div><div class="sum-lbl">ขั้นตอนทั้งหมด</div></div></div>
+  <div class="sum-card"><div class="sum-icon" style="background:var(--done-bg)">✅</div><div><div class="sum-num" style="color:var(--done)">${doneCount}</div><div class="sum-lbl">เสร็จแล้ว</div></div></div>
+  <div class="sum-card"><div class="sum-icon" style="background:var(--late-bg)">⚠️</div><div><div class="sum-num" style="color:var(--late)">${delayedSteps}</div><div class="sum-lbl">ขั้นตอนล่าช้า</div></div></div>
+  <div class="sum-card"><div class="sum-icon" style="background:var(--pend-bg)">📅</div><div><div class="sum-num" style="color:${dueColor};font-size:14px">${po.dueDate||'—'}</div><div class="sum-lbl">วันครบกำหนด</div></div></div>
+</div>
+<div class="card" style="margin-bottom:16px"><div class="card-body">
+  <div class="ph"><span style="font-size:13px;font-weight:600">ความคืบหน้าโดยรวม</span><span style="font-size:13px;color:var(--muted)">${pct}% (${doneCount}/${STEPS.length})</span></div>
+  <div class="pb-outer"><div class="pb-inner" style="width:${pct}%;background:${fc(s)}"></div></div>
+</div></div>
+<div class="card">
+  <div class="card-header"><span class="card-title">📋 ขั้นตอนการทำงาน</span><span style="font-size:11px;color:var(--muted)">🔴 ล่าช้า &nbsp;🔵 กำลังทำ</span></div>
+  <div style="overflow-x:auto">
+    <table class="steps-table">
+      <thead><tr><th>#</th><th>ขั้นตอน</th><th>สถานะ</th><th>ผู้รับผิดชอบ</th><th>วันนัดส่ง</th><th>วันที่เสร็จจริง</th><th>การดำเนินการ</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
+</div>`;
+}
+
+// ── Step actions ─────────────────────────────────────────────
+async function doneStep(id,i){
+  const today=new Date().toISOString().split('T')[0];
+  await apiPatch(`/api/projects/${id}/steps/${i}`,{doneDate:today});
+  await loadAll(); rSide(); rDetail(id);
+  shAlert('✅ บันทึกขั้นตอนสำเร็จ','success');
+}
+async function undoStep(id,i){
+  if(!confirm('ต้องการย้อนกลับขั้นตอนนี้?'))return;
+  await apiPatch(`/api/projects/${id}/steps/${i}`,{doneDate:''});
+  await loadAll(); rSide(); rDetail(id);
+}
+async function upd(id,i,f,v){
+  const body={};
+  if(f==='r')body.responsible=v;
+  else if(f==='sd')body.stepDueDate=v;
+  else body.doneDate=v;
+  await apiPatch(`/api/projects/${id}/steps/${i}`,body);
+  // update local cache silently
+  const po=_projects.find(p=>p.id===id);if(!po)return;
+  if(f==='r')(po.responsible=po.responsible||[])[i]=v;
+  else if(f==='sd')(po.stepDueDates=po.stepDueDates||[])[i]=v;
+  else(po.stepDates=po.stepDates||[])[i]=v;
+}
+
+// ── Modal: add/edit POI ───────────────────────────────────────
+function editInfo(id){
+  const po=_projects.find(p=>p.id===id);if(!po)return;
+  document.getElementById('modal-t').textContent='แก้ไขข้อมูล POI';
+  document.getElementById('np-id').value=po.id;document.getElementById('np-id').disabled=true;
+  document.getElementById('np-cust').value=po.customer||'';
+  document.getElementById('np-sup').value=po.supplier||'';
+  document.getElementById('np-item').value=po.item||'';
+  document.getElementById('np-start').value=po.startDate||'';
+  document.getElementById('np-due').value=po.dueDate||'';
+  document.getElementById('modal-alert').innerHTML='';
+  editId=id;document.getElementById('modal').classList.add('open');
+}
+function openNew(){
+  document.getElementById('modal-t').textContent='เพิ่ม POI ใหม่';
+  ['np-id','np-cust','np-sup','np-item','np-start','np-due'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('np-id').disabled=false;
+  document.getElementById('modal-alert').innerHTML='';
+  editId=null;document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');document.getElementById('np-id').disabled=false}
+async function savePO(){
+  const id=document.getElementById('np-id').value.trim();
+  const sup=document.getElementById('np-sup').value.trim();
+  if(!id){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณากรอกเลขที่ POI</div>';return}
+  if(!sup){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณากรอกชื่อ Supplier</div>';return}
+  const body={id,supplier:sup,customer:document.getElementById('np-cust').value.trim(),item:document.getElementById('np-item').value.trim(),startDate:document.getElementById('np-start').value,dueDate:document.getElementById('np-due').value};
+  let res;
+  if(editId){ res=await apiPut(`/api/projects/${editId}`,body); }
+  else { res=await apiPost('/api/projects',body); if(res.error){document.getElementById('modal-alert').innerHTML=`<div class="alert alert-error">${res.error==='Project ID already exists'?'เลขที่ POI นี้มีอยู่แล้ว':res.error}</div>`;return;} }
+  await loadAll();closeModal();rSide();
+  openPO(editId||id);
+}
+async function delPO(id){
+  if(!confirm('ต้องการลบ '+id+' ออก?'))return;
+  await apiDel(`/api/projects/${id}`);
+  await loadAll();activePO=null;rSide();
+  document.getElementById('content').innerHTML='<div class="welcome"><div class="welcome-icon">🗑</div><h2>POI ถูกลบแล้ว</h2><p>เลือก POI อื่น หรือสร้างใหม่</p><button class="btn btn-primary" onclick="openNew()">+ เพิ่ม POI ใหม่</button></div>';
+}
+function shAlert(msg,type){const el=document.getElementById('sa');if(!el)return;el.innerHTML=`<div class="alert alert-${type}" style="margin-bottom:12px">${msg}</div>`;setTimeout(()=>{if(el)el.innerHTML=''},3000)}
+
+// ── Team config ───────────────────────────────────────────────
+function rTeam(){
+  const team=getTeam();
+  document.getElementById('team-grid').innerHTML=team.map((name,i)=>`
+    <div class="team-row">
+      <div class="team-avatar" style="background:${avatarColor(name)};color:${avatarTextColor(name)}">${initials(name)}</div>
+      <div style="flex:1"><div class="team-name">${name.split('-')[0]||name}</div><div class="team-role">${name.split('-')[1]||''}</div></div>
+      <button class="team-del" onclick="delTeamMember(${i})" title="ลบ">×</button>
+    </div>`).join('');
+}
+async function addTeamMember(){
+  const v=document.getElementById('new-name').value.trim();if(!v)return;
+  if(_team.includes(v)){alert('มีชื่อนี้อยู่แล้ว');return}
+  _team.push(v);
+  await apiPut('/api/config/team',{team:_team});
+  document.getElementById('new-name').value='';rTeam();
+}
+async function delTeamMember(i){
+  if(!confirm('ลบสมาชิกคนนี้?'))return;
+  _team.splice(i,1);
+  await apiPut('/api/config/team',{team:_team});
+  rTeam();
+}
+
+// ── Step days config ──────────────────────────────────────────
+function rStepDays(){
+  const days=getStepDays();
+  document.getElementById('step-days-grid').innerHTML=STEPS.map((name,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface)">
+      <span style="font-size:12px;flex:1;color:var(--text)">${i+1}. ${name}</span>
+      <input type="number" min="1" max="365" value="${days[i]||1}" id="sd-${i}" style="width:60px;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--r);font-family:'Sarabun',sans-serif">
+      <span style="font-size:11px;color:var(--muted)">วัน</span>
+    </div>`).join('');
+}
+async function saveStepDays(){
+  _stepDays=STEPS.map((_,i)=>parseInt(document.getElementById('sd-'+i).value)||1);
+  await apiPut('/api/config/stepdays',{stepDays:_stepDays});
+  const el=document.getElementById('days-saved');el.style.display='inline';setTimeout(()=>el.style.display='none',2000);
+}
+
+// ── Tab switching with password gate ─────────────────────────
+const PW='08122005';
+let pwShowing=false, configUnlocked=false;
+
+function checkPW(){
+  const v=document.getElementById('pw-input').value;
+  if(v===PW){
+    configUnlocked=true;
+    document.getElementById('pw-gate').classList.add('hidden');
+    document.getElementById('pw-input').value='';
+    document.getElementById('pw-error').textContent='';
+    // actually open config tab now
+    const el=document.querySelectorAll('.nav-tab')[1];
+    _doSwitchTab('config',el);
+  } else {
+    const inp=document.getElementById('pw-input');
+    inp.classList.add('error');
+    document.getElementById('pw-error').textContent='รหัสผ่านไม่ถูกต้อง ลองใหม่อีกครั้ง';
+    inp.value='';
+    setTimeout(()=>inp.classList.remove('error'),400);
+  }
+}
+function togglePWShow(){
+  pwShowing=!pwShowing;
+  document.getElementById('pw-input').type=pwShowing?'text':'password';
+  document.getElementById('pw-toggle').textContent=pwShowing?'🙈':'👁';
+}
+function cancelPW(){
+  document.getElementById('pw-gate').classList.add('hidden');
+  document.getElementById('pw-input').value='';
+  document.getElementById('pw-error').textContent='';
+  const poiTab=document.querySelectorAll('.nav-tab')[0];
+  _doSwitchTab('poi',poiTab);
+}
+function _doSwitchTab(tab,el){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  document.getElementById('tab-poi').style.display=tab==='poi'?'block':'none';
+  document.getElementById('tab-config').style.display=tab==='config'?'block':'none';
+  if(tab==='config'){rTeam();rStepDays();}
+}
+function switchTab(tab,el){
+  if(tab==='config'&&!configUnlocked){
+    document.getElementById('pw-gate').classList.remove('hidden');
+    setTimeout(()=>document.getElementById('pw-input').focus(),50);
+    return;
+  }
+  _doSwitchTab(tab,el);
+}
+
+// ── Init ──────────────────────────────────────────────────────
+async function init(){
+  await loadAll();
+  rSide();rTeam();rStepDays();
+}
+init();
+</script>
+</body>
+</html>
